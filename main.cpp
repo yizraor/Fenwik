@@ -4,7 +4,7 @@
 
 using namespace std;
 
-// тестирование производительности метода, получающего массив префиксных сумм
+// С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ РїСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚Рё РјРµС‚РѕРґР°, РїРѕР»СѓС‡Р°СЋС‰РµРіРѕ РјР°СЃСЃРёРІ РїСЂРµС„РёРєСЃРЅС‹С… СЃСѓРјРј
 void test_sum_prefixes(Fenwik & obj, int* src, int idx_left, int idx_right, int passes)
 {
 	int* triv_ret = new int[idx_right - idx_left + 1];
@@ -50,7 +50,7 @@ void test_sum_prefixes(Fenwik & obj, int* src, int idx_left, int idx_right, int 
 	delete[] check;
 }
 
-// тестирование производительности метода, модифицирующего значения исходных данных (src[i] += add_value)
+// С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ РїСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚Рё РјРµС‚РѕРґР°, РјРѕРґРёС„РёС†РёСЂСѓСЋС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ РёСЃС…РѕРґРЅС‹С… РґР°РЅРЅС‹С… (src[i] += add_value)
 void test_modify_values(Fenwik & obj, int* src, int idx_left, int idx_right, int add_value, int passes)
 {
 	int* triv_ret = new int[obj.get_size()];
@@ -112,7 +112,7 @@ void test_modify_values(Fenwik & obj, int* src, int idx_left, int idx_right, int
 	delete[] check;
 }
 
-// тестирование производительности метода, устанавливающего значения исходных данных (src[i] = add_value)
+// С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ РїСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚Рё РјРµС‚РѕРґР°, СѓСЃС‚Р°РЅР°РІР»РёРІР°СЋС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ РёСЃС…РѕРґРЅС‹С… РґР°РЅРЅС‹С… (src[i] = add_value)
 void test_set_values(Fenwik & obj, int* src, int idx_left, int idx_right, int new_value, int passes)
 {
 	int* triv_ret = new int[obj.get_size()];
@@ -175,7 +175,7 @@ void test_set_values(Fenwik & obj, int* src, int idx_left, int idx_right, int ne
 }
 
 
-// главная функция: генерация случайных данных, выполнение тестов
+// РіР»Р°РІРЅР°СЏ С„СѓРЅРєС†РёСЏ: РіРµРЅРµСЂР°С†РёСЏ СЃР»СѓС‡Р°Р№РЅС‹С… РґР°РЅРЅС‹С…, РІС‹РїРѕР»РЅРµРЅРёРµ С‚РµСЃС‚РѕРІ
 void main(void)
 {
 	srand(GetTickCount());
