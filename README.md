@@ -1,3 +1,2 @@
 # Fenwik
-simple implementation of the Fenwick tree structure, with additional methods
-compile with: MS Visual Studio Community 2015
+simple implementation of the Fenwick tree structure, with additional methods (created with MS Visual Studio Community 2015)
