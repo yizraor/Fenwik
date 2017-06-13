@@ -1,8 +1,44 @@
-#include <iostream>
+﻿#include <iostream>
 #include <Windows.h>
 #include "Fenwik.h"
 
 using namespace std;
+
+// тестирование производительности метода, вычисляющего элемент исходного массива на основе данных дерева
+void test_compute_value(Fenwik & obj, int* src, int size, int passes)
+{
+	int* triv_ret = new int[size];
+	int* opt_ret = new int[size];
+
+	LARGE_INTEGER freq;
+	LARGE_INTEGER time_1, time_2, time_3;
+	LONGLONG diff_1, diff_2;
+
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&time_1);
+
+	for ( int k = 0; k < passes; ++k )
+		for ( int i = 0; i < size; ++i )
+			triv_ret[i] = obj.sum_prefix(i) - obj.sum_prefix(i-1);
+
+	QueryPerformanceCounter(&time_2);
+
+	for ( int k = 0; k < passes; ++k )
+		for ( int i = 0; i < size; ++i )
+			opt_ret[i] = obj.compute_value(i);
+
+	QueryPerformanceCounter(&time_3);
+	diff_1 = (time_2.QuadPart - time_1.QuadPart) * 1000 / freq.QuadPart;
+	diff_2 = (time_3.QuadPart - time_2.QuadPart) * 1000 / freq.QuadPart;
+
+	cout << "TEST_COMPUTE_VALUE:\t trivial = " << diff_1 << " ms;\t optimized = " << diff_2 << " ms" << endl;
+
+	if ( 0 != memcmp(triv_ret, src, size * sizeof(int)) )
+		throw "TEST_COMPUTE_VALUE: validation error (1)";
+
+	if ( 0 != memcmp(opt_ret, src, size * sizeof(int)) )
+		throw "TEST_COMPUTE_VALUE: validation error (2)";
+}
 
 // тестирование производительности метода, получающего массив префиксных сумм
 void test_sum_prefixes(Fenwik & obj, int* src, int idx_left, int idx_right, int passes)
@@ -30,7 +66,7 @@ void test_sum_prefixes(Fenwik & obj, int* src, int idx_left, int idx_right, int 
 	diff_1 = (time_2.QuadPart - time_1.QuadPart) * 1000 / freq.QuadPart;
 	diff_2 = (time_3.QuadPart - time_2.QuadPart) * 1000 / freq.QuadPart;
 
-	cout << "TEST_SUM_PREFIXES:  trivial = " << diff_1 << " ms;  optimized = " << diff_2 << " ms" << endl;
+	cout << "TEST_SUM_PREFIXES:\t trivial = " << diff_1 << " ms;\t optimized = " << diff_2 << " ms" << endl;
 
 	int* check = new int[idx_right - idx_left + 1];
 	memset(check, 0, (idx_right - idx_left + 1) * sizeof(int));
@@ -86,7 +122,7 @@ void test_modify_values(Fenwik & obj, int* src, int idx_left, int idx_right, int
 	diff_1 = (time_2.QuadPart - time_1.QuadPart) * 1000 / freq.QuadPart;
 	diff_2 = (time_3.QuadPart - time_2.QuadPart) * 1000 / freq.QuadPart;
 
-	cout << "TEST_MODIFY_VALUES:  trivial = " << diff_1 << " ms;  optimized = " << diff_2 << " ms" << endl;
+	cout << "TEST_MODIFY_VALUES:\t trivial = " << diff_1 << " ms;\t optimized = " << diff_2 << " ms" << endl;
 
 	int* check_src = new int[obj.get_size()];
 	int* check = new int[obj.get_size()];
@@ -101,10 +137,10 @@ void test_modify_values(Fenwik & obj, int* src, int idx_left, int idx_right, int
 		check[i] = (g_sum += check_src[i]);
 
 	if (0 != memcmp(check, triv_ret, obj.get_size() * sizeof(int)))
-		throw "TEST_MODIFY_VALUES:  validation error (1)";
+		throw "TEST_MODIFY_VALUES: validation error (1)";
 
 	if (0 != memcmp(check, opt_ret, obj.get_size() * sizeof(int)))
-		throw "TEST_MODIFY_VALUES:  validation error (2)";
+		throw "TEST_MODIFY_VALUES: validation error (2)";
 
 	delete[] triv_ret;
 	delete[] opt_ret;
@@ -137,7 +173,8 @@ void test_set_values(Fenwik & obj, int* src, int idx_left, int idx_right, int ne
 
 	for (int k = 0; k < passes; ++k)
 		for (int i = idx_left; i <= idx_right; ++i)
-			triv_obj.set_value(i, new_value);
+			triv_obj.modify_value(i, new_value - (triv_obj.sum_prefix(i) - triv_obj.sum_prefix(i-1)));
+			//triv_obj.set_value(i, new_value);  // этот метод стал улучшенным из-за оптимизации Fenwik::compute_value()
 
 	QueryPerformanceCounter(&time_2);
 
@@ -148,7 +185,7 @@ void test_set_values(Fenwik & obj, int* src, int idx_left, int idx_right, int ne
 	diff_1 = (time_2.QuadPart - time_1.QuadPart) * 1000 / freq.QuadPart;
 	diff_2 = (time_3.QuadPart - time_2.QuadPart) * 1000 / freq.QuadPart;
 
-	cout << "TEST_SET_VALUES:  trivial = " << diff_1 << " ms;  optimized = " << diff_2 << " ms" << endl;
+	cout << "TEST_SET_VALUES:\t trivial = " << diff_1 << " ms;\t optimized = " << diff_2 << " ms" << endl;
 
 	int* check_src = new int[obj.get_size()];
 	int* check = new int[obj.get_size()];
@@ -163,10 +200,10 @@ void test_set_values(Fenwik & obj, int* src, int idx_left, int idx_right, int ne
 		check[i] = (g_sum += check_src[i]);
 
 	if (0 != memcmp(check, triv_ret, obj.get_size() * sizeof(int)))
-		throw "TEST_SET_VALUES:  validation error (1)";
+		throw "TEST_SET_VALUES: validation error (1)";
 
 	if (0 != memcmp(check, opt_ret, obj.get_size() * sizeof(int)))
-		throw "TEST_SET_VALUES:  validation error (2)";
+		throw "TEST_SET_VALUES: validation error (2)";
 
 	delete[] triv_ret;
 	delete[] opt_ret;
@@ -196,20 +233,24 @@ void main(void)
 
 	try
 	{
+		test_compute_value(obj, src, size, 25 * ITERS_MULTIPLIER);
+
+		cout << endl;
+
 		test_sum_prefixes(obj, src, 0, 5, 2000000 * ITERS_MULTIPLIER);
 		test_sum_prefixes(obj, src, 7, 57, 200000 * ITERS_MULTIPLIER);
-		test_sum_prefixes(obj, src, 120000, 120050, 200000 * ITERS_MULTIPLIER);
+		test_sum_prefixes(obj, src, 120000, 120050, 100000 * ITERS_MULTIPLIER);
 		test_sum_prefixes(obj, src, 14, 514, 20000 * ITERS_MULTIPLIER);
-		test_sum_prefixes(obj, src, 7500, 10000, 4000 * ITERS_MULTIPLIER);
+		test_sum_prefixes(obj, src, 7500, 10000, 3000 * ITERS_MULTIPLIER);
 		//test_sum_prefixes(obj, src, 0, size - 1, 100 * ITERS_MULTIPLIER);
 
 		cout << endl;
 
 		test_modify_values(obj, src, 0, 5, 11, 500000 * ITERS_MULTIPLIER);
-		test_modify_values(obj, src, 7, 57, 12, 100000 * ITERS_MULTIPLIER);
-		test_modify_values(obj, src, 120000, 120050, 13, 100000 * ITERS_MULTIPLIER);
-		test_modify_values(obj, src, 14, 514, 14, 10000 * ITERS_MULTIPLIER);
-		test_modify_values(obj, src, 7500, 10000, 15, 2500 * ITERS_MULTIPLIER);
+		test_modify_values(obj, src, 7, 57, 12, 75000 * ITERS_MULTIPLIER);
+		test_modify_values(obj, src, 120000, 120050, 13, 75000 * ITERS_MULTIPLIER);
+		test_modify_values(obj, src, 14, 514, 14, 7500 * ITERS_MULTIPLIER);
+		test_modify_values(obj, src, 7500, 10000, 15, 2000 * ITERS_MULTIPLIER);
 		//test_modify_values(obj, src, 0, size - 1, 1, 100 * ITERS_MULTIPLIER);
 
 		cout << endl;

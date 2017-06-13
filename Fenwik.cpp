@@ -1,7 +1,5 @@
-#include <memory.h>
+﻿#include <memory.h>
 #include "Fenwik.h"
-
-using namespace std;
 
 // конструктор дерева Фенвика: на входе - исходный массив значений, по которому будут считаться частичные суммы
 Fenwik::Fenwik(int src_size, int* src_array)
@@ -36,13 +34,6 @@ int Fenwik::get_size()
 	return size;
 }
 
-// обновление дерева в связи с изменением элемента исходного массива
-void Fenwik::modify_value(int idx, int add_value)
-{
-	for (; idx < size; idx |= idx + 1)
-		data[idx] += add_value;
-}
-
 // получение префиксной суммы, по элементам от 0 до "idx" (включительно)
 int Fenwik::sum_prefix(int idx)
 {
@@ -55,16 +46,41 @@ int Fenwik::sum_prefix(int idx)
 }
 
 // получение суммы элементов исходного массива с индексами от "idx_left" до "idx_right" (включительно)
-__inline int Fenwik::sum_range(int idx_left, int idx_right)
+int Fenwik::sum_range(int idx_left, int idx_right)
 {
 	return (sum_prefix(idx_right) - sum_prefix(idx_left - 1));
 }
 
 // расчет значения элемента исходного массива, на основе данных дерева
-__inline int Fenwik::compute_value(int idx)
+int Fenwik::compute_value(int idx)
 {
-	//return sum_range(idx, idx);
-	return (idx % 2) ? sum_range(idx, idx) : data[idx];
+	// наилучший случай (1/2): data[idx] и есть искомое значение
+	if ( (idx & 1) == 0 )
+		return data[idx];
+	// простейший, но часто встречаемый случай (1/4): результат равен разности соседних значений
+	else if ( (idx & 3) == 1 )
+		return data[idx] - data[idx-1];
+	// ещё один простой случай (1/8)
+	else if ( (idx & 7) == 3 )
+		return data[idx] - data[idx-1] - data[idx-2];
+	// худший случай: при (idx == 2^n - 1) алгоритм вырождается в нахождение префиксной суммы для "idx"
+	else if ( (idx & (idx + 1)) == 0 )
+		return data[idx] - sum_prefix(idx - 1);
+
+	int i, t;
+	int part_sum = data[idx];
+	
+	// нахождение индекса самой левой компонентной суммы для "idx"
+	// (определить кол-во единичных младших битов, завершающих число)
+	for (t = 1, i = idx >> 1; (i & 1); i >>= 1)
+		t <<= 1;
+
+	// делим отрезок [idx & (~t); idx] пополам, пока есть чего делить;
+	// вычитаем компонентную сумму левого конца каждого отрезка
+	for (; t != 0; t >>= 1)
+		part_sum -= data[idx - t];
+
+	return part_sum;
 }
 
 // заполнение параметра-массива префиксными суммами для элементов от "idx_left" до "idx_right" (включительно)
@@ -77,14 +93,8 @@ int* Fenwik::sum_prefixes(int idx_left, int idx_right, int* ret)
 	int temp[8 * sizeof(int) + 1];
 	int i, idx, temp_idx, t;
 
-	t = 1;
-	idx = (idx_left & (idx_left + 1)) - 1;
-		
-	while (idx >= 0)
-	{
+	for (t=0, idx = idx_left; idx >= 0; idx = (idx & (idx + 1)) - 1)
 		++t;
-		idx = (idx & (idx + 1)) - 1;
-	}
 
 	// проход по компонентным суммам для "idx_left" спуском влево, заполнение массива "temp"
 	temp[0] = 0;
@@ -114,6 +124,13 @@ int* Fenwik::sum_prefixes(int idx_left, int idx_right, int* ret)
 	}
 
 	return ret;
+}
+
+// обновление дерева в связи с изменением элемента исходного массива
+void Fenwik::modify_value(int idx, int add_value)
+{
+	for (; idx < size; idx |= idx + 1)
+		data[idx] += add_value;
 }
 
 // изменение набора значений исходного массива данных с индексами от "idx_left" по "idx_right' (включительно)
@@ -160,18 +177,13 @@ void Fenwik::set_value(int idx, int new_value)
 // кстати, легко модифицируется под приём массива разных константных значений (int* new_values) для индивидуального присвоения каждого элемента
 void Fenwik::set_values(int idx_left, int idx_right, int new_value)
 {
-	int i, idx, sum_cur, cur_value, add_value;
+	int i, idx, add_value;
 	int full_sum = 0;
-	int sum_prev = sum_prefix(idx_right);
 
 	// обновление частичных сумм в диапазоне указанных индексов (и связанных с ними последующих)
 	for (i = idx_right; i >= idx_left; --i)
 	{
-		sum_cur = sum_prev;
-		sum_prev = sum_prefix(i - 1);
-
-		cur_value = sum_cur - sum_prev;
-		add_value = new_value - cur_value;
+		add_value = new_value - compute_value(i);
 
 		full_sum += add_value;
 		data[i] += add_value;
@@ -190,7 +202,7 @@ void Fenwik::set_values(int idx_left, int idx_right, int new_value)
 	// обновление всех последующих полных префиксных сумм
 	idx = idx_right | (idx_right + 1);
 
-	// пропуск неполных частичных сумм после "idx_right" до момента, когда встретится на пути полная префиксная сумма
+	// пропуск частичных сумм после "idx_right" до момента, когда встретится на пути полная префиксная сумма
 	while ((idx < size) && ((idx & (idx + 1)) > 0))
 		idx |= idx + 1;
 
